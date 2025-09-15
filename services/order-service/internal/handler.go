@@ -123,13 +123,13 @@ func (h *handle) GetOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	vars := mux.Vars(r)
 	//to check for empty parameter
-	ordidstr := vars["orderid"]
+	ordidstr := vars["id"]
 	if ordidstr == "" {
 		http.Error(w, "Order ID is required", http.StatusBadRequest)
 		return
 	}
 	//to deal with the order id that will be passed in the uri
-	id, err := strconv.ParseInt(vars["orderid"], 10, 32)
+	id, err := strconv.ParseInt(vars["id"], 10, 32)
 	if err != nil {
 		http.Error(w, "Invalid order ID: Must be a number",
 			http.StatusBadRequest)
