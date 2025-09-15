@@ -1,0 +1,9 @@
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL,
+    product_description TEXT,
+    stock NUMERIC(10,2) NOT NULL,
+    price NUMERIC(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
