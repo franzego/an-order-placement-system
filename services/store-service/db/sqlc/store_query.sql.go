@@ -11,243 +11,74 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const bulkCheckStock = `-- name: BulkCheckStock :many
-SELECT 
-    id,
-    product_name,
-    available_quantity,
-    CASE 
-        WHEN available_quantity >= $2 THEN true 
-        ELSE false 
-    END as can_fulfill
+const checkStock = `-- name: CheckStock :one
+SELECT available_quantity 
 FROM store 
-WHERE id = ANY($1::bigint[])
-FOR UPDATE
+WHERE id = $1
 `
 
-type BulkCheckStockParams struct {
-	Column1           []int64        `json:"column_1"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
+func (q *Queries) CheckStock(ctx context.Context, id int64) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, checkStock, id)
+	var available_quantity pgtype.Numeric
+	err := row.Scan(&available_quantity)
+	return available_quantity, err
 }
 
-type BulkCheckStockRow struct {
+const getProduct = `-- name: GetProduct :one
+SELECT id, product_name, available_quantity, price
+FROM store
+WHERE id = $1
+`
+
+type GetProductRow struct {
 	ID                int64          `json:"id"`
 	ProductName       string         `json:"product_name"`
 	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	CanFulfill        bool           `json:"can_fulfill"`
+	Price             pgtype.Numeric `json:"price"`
 }
 
-func (q *Queries) BulkCheckStock(ctx context.Context, arg BulkCheckStockParams) ([]BulkCheckStockRow, error) {
-	rows, err := q.db.Query(ctx, bulkCheckStock, arg.Column1, arg.AvailableQuantity)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []BulkCheckStockRow
-	for rows.Next() {
-		var i BulkCheckStockRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.ProductName,
-			&i.AvailableQuantity,
-			&i.CanFulfill,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const checkStockAvailability = `-- name: CheckStockAvailability :many
-SELECT 
-    id,
-    product_name,
-    available_quantity,
-    reserved_quantity,
-    (available_quantity >= $2) as is_sufficient
-FROM store 
-WHERE id = ANY($1::bigint[])
-FOR UPDATE
-`
-
-type CheckStockAvailabilityParams struct {
-	Column1           []int64        `json:"column_1"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-}
-
-type CheckStockAvailabilityRow struct {
-	ID                int64          `json:"id"`
-	ProductName       string         `json:"product_name"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	ReservedQuantity  pgtype.Numeric `json:"reserved_quantity"`
-	IsSufficient      bool           `json:"is_sufficient"`
-}
-
-func (q *Queries) CheckStockAvailability(ctx context.Context, arg CheckStockAvailabilityParams) ([]CheckStockAvailabilityRow, error) {
-	rows, err := q.db.Query(ctx, checkStockAvailability, arg.Column1, arg.AvailableQuantity)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []CheckStockAvailabilityRow
-	for rows.Next() {
-		var i CheckStockAvailabilityRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.ProductName,
-			&i.AvailableQuantity,
-			&i.ReservedQuantity,
-			&i.IsSufficient,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const confirmStockSale = `-- name: ConfirmStockSale :one
-UPDATE store 
-SET 
-    reserved_quantity = reserved_quantity - $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 
-  AND reserved_quantity >= $2
-RETURNING id, product_name, available_quantity, reserved_quantity
-`
-
-type ConfirmStockSaleParams struct {
-	ID               int64          `json:"id"`
-	ReservedQuantity pgtype.Numeric `json:"reserved_quantity"`
-}
-
-type ConfirmStockSaleRow struct {
-	ID                int64          `json:"id"`
-	ProductName       string         `json:"product_name"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	ReservedQuantity  pgtype.Numeric `json:"reserved_quantity"`
-}
-
-func (q *Queries) ConfirmStockSale(ctx context.Context, arg ConfirmStockSaleParams) (ConfirmStockSaleRow, error) {
-	row := q.db.QueryRow(ctx, confirmStockSale, arg.ID, arg.ReservedQuantity)
-	var i ConfirmStockSaleRow
+func (q *Queries) GetProduct(ctx context.Context, id int64) (GetProductRow, error) {
+	row := q.db.QueryRow(ctx, getProduct, id)
+	var i GetProductRow
 	err := row.Scan(
 		&i.ID,
 		&i.ProductName,
 		&i.AvailableQuantity,
-		&i.ReservedQuantity,
+		&i.Price,
 	)
 	return i, err
 }
 
-const releaseReservedStock = `-- name: ReleaseReservedStock :one
-UPDATE store 
-SET 
-    available_quantity = available_quantity + $2,
-    reserved_quantity = reserved_quantity - $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 
-  AND reserved_quantity >= $2
-RETURNING id, product_name, available_quantity, reserved_quantity
+const releaseStock = `-- name: ReleaseStock :exec
+UPDATE store
+SET available_quantity = available_quantity + $1,
+    reserved_quantity = reserved_quantity - $1
+WHERE id = $2 AND reserved_quantity >= $1
 `
 
-type ReleaseReservedStockParams struct {
-	ID                int64          `json:"id"`
+type ReleaseStockParams struct {
 	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-}
-
-type ReleaseReservedStockRow struct {
 	ID                int64          `json:"id"`
-	ProductName       string         `json:"product_name"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	ReservedQuantity  pgtype.Numeric `json:"reserved_quantity"`
 }
 
-func (q *Queries) ReleaseReservedStock(ctx context.Context, arg ReleaseReservedStockParams) (ReleaseReservedStockRow, error) {
-	row := q.db.QueryRow(ctx, releaseReservedStock, arg.ID, arg.AvailableQuantity)
-	var i ReleaseReservedStockRow
-	err := row.Scan(
-		&i.ID,
-		&i.ProductName,
-		&i.AvailableQuantity,
-		&i.ReservedQuantity,
-	)
-	return i, err
+func (q *Queries) ReleaseStock(ctx context.Context, arg ReleaseStockParams) error {
+	_, err := q.db.Exec(ctx, releaseStock, arg.AvailableQuantity, arg.ID)
+	return err
 }
 
-const reserveStock = `-- name: ReserveStock :one
-
+const reserveStock = `-- name: ReserveStock :exec
 UPDATE store 
-SET 
-    available_quantity = available_quantity - $2,
-    reserved_quantity = reserved_quantity + $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 
-  AND available_quantity >= $2
-RETURNING id, product_name, available_quantity, reserved_quantity
+SET available_quantity = available_quantity - $1,
+    reserved_quantity = reserved_quantity + $1
+WHERE id = $2 AND available_quantity >= $1
 `
 
 type ReserveStockParams struct {
-	ID                int64          `json:"id"`
 	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-}
-
-type ReserveStockRow struct {
 	ID                int64          `json:"id"`
-	ProductName       string         `json:"product_name"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	ReservedQuantity  pgtype.Numeric `json:"reserved_quantity"`
 }
 
-// Lock rows during transaction
-func (q *Queries) ReserveStock(ctx context.Context, arg ReserveStockParams) (ReserveStockRow, error) {
-	row := q.db.QueryRow(ctx, reserveStock, arg.ID, arg.AvailableQuantity)
-	var i ReserveStockRow
-	err := row.Scan(
-		&i.ID,
-		&i.ProductName,
-		&i.AvailableQuantity,
-		&i.ReservedQuantity,
-	)
-	return i, err
-}
-
-const restoreStock = `-- name: RestoreStock :one
-UPDATE store 
-SET 
-    available_quantity = available_quantity + $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING id, product_name, available_quantity, reserved_quantity
-`
-
-type RestoreStockParams struct {
-	ID                int64          `json:"id"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-}
-
-type RestoreStockRow struct {
-	ID                int64          `json:"id"`
-	ProductName       string         `json:"product_name"`
-	AvailableQuantity pgtype.Numeric `json:"available_quantity"`
-	ReservedQuantity  pgtype.Numeric `json:"reserved_quantity"`
-}
-
-func (q *Queries) RestoreStock(ctx context.Context, arg RestoreStockParams) (RestoreStockRow, error) {
-	row := q.db.QueryRow(ctx, restoreStock, arg.ID, arg.AvailableQuantity)
-	var i RestoreStockRow
-	err := row.Scan(
-		&i.ID,
-		&i.ProductName,
-		&i.AvailableQuantity,
-		&i.ReservedQuantity,
-	)
-	return i, err
+func (q *Queries) ReserveStock(ctx context.Context, arg ReserveStockParams) error {
+	_, err := q.db.Exec(ctx, reserveStock, arg.AvailableQuantity, arg.ID)
+	return err
 }
