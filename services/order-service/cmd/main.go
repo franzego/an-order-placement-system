@@ -12,6 +12,7 @@ import (
 	"github.com/franzego/ecommerce-microservices/order-service/config"
 	"github.com/franzego/ecommerce-microservices/order-service/internal"
 	"github.com/franzego/ecommerce-microservices/order-service/kafka"
+	"github.com/franzego/ecommerce-microservices/order-service/middleware"
 	"github.com/franzego/ecommerce-microservices/order-service/service"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -51,6 +52,7 @@ func main() {
 
 	rou := mux.NewRouter()
 	api := rou.PathPrefix("/api/v1").Subrouter()
+	api.Use(middleware.AuthMiddleWare)
 	routes.RegisterRoutes(api)
 
 	s := &http.Server{

@@ -15,6 +15,9 @@ type Service struct {
 }
 
 func NewService(svc RepoServicer) *Service {
+	if svc == nil {
+		return nil
+	}
 	return &Service{RepoServicer: svc}
 }
 
@@ -65,24 +68,24 @@ func FloattoNumeric(f float64) pgtype.Numeric {
 }
 
 // func to reseverve stock
-func (s *Service) StoreFunc(ctx context.Context, args db.ReserveStockParams) (db.GetProductRow, error) {
-	availquant, err := s.RepoServicer.CheckStock(ctx, args.ID)
+func (s *Service) StoreFunc(ctx context.Context, Id int32, quantity int32) (db.GetProductRow, error) {
+	availquant, err := s.RepoServicer.CheckStock(ctx, int64(Id))
 	if err != nil {
 		log.Print(err)
 	}
 
 	num := NumerictoFloat(availquant)
-	numargs := NumerictoFloat(args.AvailableQuantity)
-	if num < numargs {
+	/*numargs := NumerictoFloat(args.AvailableQuantity)
+	if num < float64(quantity) {
 		//log.Print("the available quantity is not enough")
 		return db.GetProductRow{}, fmt.Errorf("not enough stock: have %v, need %v", num, numargs)
 
-	}
+	}*/
 	pgavail := FloattoNumeric(num)
 
 	sth := db.ReserveStockParams{
 		AvailableQuantity: pgavail,
-		ID:                args.ID,
+		ID:                int64(Id),
 	}
 	err = s.RepoServicer.ReserveStock(ctx, sth)
 	if err != nil {

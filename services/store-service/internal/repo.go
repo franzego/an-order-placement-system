@@ -22,6 +22,9 @@ type Repo struct {
 }
 
 func NewRepoService(dbconn *pgxpool.Pool) *Repo {
+	if dbconn == nil {
+		return nil
+	}
 	return &Repo{
 		dbq: db.New(dbconn),
 		db:  dbconn,
