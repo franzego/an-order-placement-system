@@ -13,7 +13,7 @@ import (
 
 const checkStock = `-- name: CheckStock :one
 SELECT available_quantity 
-FROM store 
+FROM products 
 WHERE id = $1
 `
 
@@ -26,7 +26,7 @@ func (q *Queries) CheckStock(ctx context.Context, id int64) (pgtype.Numeric, err
 
 const getProduct = `-- name: GetProduct :one
 SELECT id, product_name, available_quantity, price
-FROM store
+FROM products
 WHERE id = $1
 `
 
@@ -50,7 +50,7 @@ func (q *Queries) GetProduct(ctx context.Context, id int64) (GetProductRow, erro
 }
 
 const releaseStock = `-- name: ReleaseStock :exec
-UPDATE store
+UPDATE products
 SET available_quantity = available_quantity + $1,
     reserved_quantity = reserved_quantity - $1
 WHERE id = $2 AND reserved_quantity >= $1
@@ -67,7 +67,7 @@ func (q *Queries) ReleaseStock(ctx context.Context, arg ReleaseStockParams) erro
 }
 
 const reserveStock = `-- name: ReserveStock :exec
-UPDATE store 
+UPDATE products 
 SET available_quantity = available_quantity - $1,
     reserved_quantity = reserved_quantity + $1
 WHERE id = $2 AND available_quantity >= $1

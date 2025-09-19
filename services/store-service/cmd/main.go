@@ -30,21 +30,26 @@ func main() {
 		log.Fatal("Failed to create service")
 	}
 
-	cons := internal.NewConsumerService(cfg.KafkaBrokers, svc)
-	if cons == nil {
-		log.Fatal("Failed to initiate consumer service")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// handle shutdown signals
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGTERM, syscall.SIGABRT)
 		<-ch
 		log.Println("shutting down store service...")
 		cancel()
-
 	}()
-	cons.ReadMessage(ctx)
+
+	if cfg.KafkaEnabled {
+		cons := internal.NewConsumerService(cfg.KafkaBrokers, svc)
+		if cons == nil {
+			log.Fatal("Failed to initiate consumer service")
+		}
+		cons.ReadMessage(ctx)
+	} else {
+		log.Println("Kafka consumer disabled by config; waiting for shutdown signal")
+		<-ctx.Done()
+	}
 }

@@ -23,6 +23,9 @@ type Service struct {
 }
 
 func NewService(svc RepoServicer) *Service {
+	if svc == nil {
+		return nil
+	}
 	return &Service{RepoServicer: svc}
 }
 func (s *Service) SignUp(ctx context.Context, username string, email string,

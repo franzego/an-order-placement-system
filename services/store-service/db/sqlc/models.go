@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Store struct {
+type Product struct {
 	ID                 int64            `json:"id"`
 	ProductName        string           `json:"product_name"`
 	ProductDescription pgtype.Text      `json:"product_description"`

@@ -12,6 +12,9 @@ type Handler struct {
 }
 
 func NewHandler(hand Servicer) *Handler {
+	if hand == nil {
+		return nil
+	}
 	return &Handler{Servicer: hand}
 
 }

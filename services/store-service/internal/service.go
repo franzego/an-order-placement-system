@@ -72,19 +72,22 @@ func (s *Service) StoreFunc(ctx context.Context, Id int32, quantity int32) (db.G
 	availquant, err := s.RepoServicer.CheckStock(ctx, int64(Id))
 	if err != nil {
 		log.Print(err)
+		return db.GetProductRow{}, fmt.Errorf("failed to check stock: %w", err)
 	}
 
 	num := NumerictoFloat(availquant)
-	/*numargs := NumerictoFloat(args.AvailableQuantity)
-	if num < float64(quantity) {
-		//log.Print("the available quantity is not enough")
-		return db.GetProductRow{}, fmt.Errorf("not enough stock: have %v, need %v", num, numargs)
 
-	}*/
-	pgavail := FloattoNumeric(num)
+	// Check if there's enough stock available
+	if num < float64(quantity) {
+		log.Printf("Not enough stock: have %v, need %v", num, quantity)
+		return db.GetProductRow{}, fmt.Errorf("not enough stock: have %v, need %v", num, quantity)
+	}
+
+	// Convert the quantity to reserve to pgtype.Numeric
+	quantityToReserve := FloattoNumeric(float64(quantity))
 
 	sth := db.ReserveStockParams{
-		AvailableQuantity: pgavail,
+		AvailableQuantity: quantityToReserve, // This is my quantity that i want to reserve. Dont mind the naming convention
 		ID:                int64(Id),
 	}
 	err = s.RepoServicer.ReserveStock(ctx, sth)

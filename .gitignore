@@ -2,3 +2,5 @@ services/tobeusedlater.sql
 services/store-service/cmd/.env
 services/user-service/authentication/.env
 services/store-service/config/.env
+services/user-service/cmd/.env
+services/user-service/config/.env

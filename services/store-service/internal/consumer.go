@@ -26,20 +26,37 @@ func NewConsumerService(brokers []string, srv *Service) *Consumer {
 	}
 }
 
-type Order struct {
-	Productid int32 `json:"product_id"`
+type OrderEvent struct {
+	Data OrderData `json:"data"`
+}
+
+type OrderData struct {
+	Items []OrderItem `json:"items"`
+}
+
+type OrderItem struct {
+	ProductID int32 `json:"product_id"`
 	Quantity  int32 `json:"quantity"`
 }
 
+/*type Order struct {
+	Productid int32 `json:"product_id"`
+	Quantity  int32 `json:"quantity"`
+}*/
+
 func (c *Consumer) HandleEvent(event []byte) {
 	//var event []byte
-	var parsed Order
+	//var parsed Order
+	var parsed OrderEvent
 
 	err := json.Unmarshal(event, &parsed)
 	if err != nil {
 		fmt.Printf("error in unmarshalling file: %v", err)
 	}
-	c.srv.StoreFunc(context.Background(), parsed.Productid, parsed.Quantity)
+	//c.srv.StoreFunc(context.Background(), parsed.Productid, parsed.Quantity)
+	for _, item := range parsed.Data.Items {
+		c.srv.StoreFunc(context.Background(), item.ProductID, item.Quantity)
+	}
 
 }
 
@@ -51,6 +68,9 @@ func (c *Consumer) ReadMessage(ctx context.Context) {
 			log.Printf("error printing out message: %v", err)
 			break
 		}
+		log.Printf("consumed message from topic %s, partition %d, offset %d", msg.Topic, msg.Partition, msg.Offset)
 		c.HandleEvent(msg.Value)
+
 	}
+
 }

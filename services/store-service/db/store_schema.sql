@@ -1,4 +1,4 @@
-create table store (
+create table products (
     id bigserial primary key,
     product_name varchar(255) not null,
     product_description text,
