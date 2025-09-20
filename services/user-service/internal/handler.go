@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -20,11 +21,11 @@ func NewHandler(hand Servicer) *Handler {
 }
 
 // /validation function
-/*func (h *Handler) Validate() error {
+func (h *Handler) Validate() error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	//validate.RegisterValidation()
 	return validate.Struct(h)
-}*/
+}
 
 /*func validatepassword(password string) bool {
 	pattern := `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$`
@@ -48,9 +49,12 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	tok, err := h.Servicer.SignUp(r.Context(), req.Username, req.Email, req.Password, req.Firstname, req.Lastname)
 	if err != nil {
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		//log.Fatalf("there was error creating user :%v", err)
 		return
 	}
+
 	resp := map[string]string{tok: "token"}
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -90,7 +94,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"msg":   "Login successful",
-		"email": req.Email,
+		"email": "req.Email",
 	})
 
 	/*resp := map[string]string{tok: "token"}

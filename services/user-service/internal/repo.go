@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	db "github.com/franzego/user-service/db/sqlc"
@@ -11,10 +12,10 @@ import (
 
 type RepoServicer interface {
 	CreateUser(ctx context.Context, username string, email string, passwordhash string,
-		firstname pgtype.Text, lastname pgtype.Text) (db.User, error)
-	GetUserByEmail(ctx context.Context, email string, password string) (db.User, error)
+		firstname pgtype.Text, lastname pgtype.Text) (db.CreateUserRow, error)
+	GetUserByEmail(ctx context.Context, email string) (db.GetUserByEmailRow, error)
 	DeleteUser(ctx context.Context, id int64) error
-	UpdateUser(ctx context.Context, args db.UpdateUserParams) (db.User, error)
+	UpdateUser(ctx context.Context, args db.UpdateUserParams) (db.UpdateUserRow, error)
 }
 
 type Repo struct {
@@ -34,7 +35,7 @@ func NewRepoService(dbconn *pgxpool.Pool) *Repo {
 }
 
 func (r *Repo) CreateUser(ctx context.Context, username string, email string,
-	passwordhash string, firstname pgtype.Text, lastname pgtype.Text) (db.User, error) {
+	passwordhash string, firstname pgtype.Text, lastname pgtype.Text) (db.CreateUserRow, error) {
 
 	user, err := r.dbq.CreateUser(ctx, db.CreateUserParams{
 		Username:     username,
@@ -50,10 +51,10 @@ func (r *Repo) CreateUser(ctx context.Context, username string, email string,
 	return user, nil
 }
 
-func (r *Repo) GetUserByEmail(ctx context.Context, email string, password string) (db.User, error) {
+func (r *Repo) GetUserByEmail(ctx context.Context, email string) (db.GetUserByEmailRow, error) {
 	user, err := r.dbq.GetUserByEmail(ctx, email)
 	if err != nil {
-		log.Printf("error in getting user from email: %v", err)
+		return db.GetUserByEmailRow{}, fmt.Errorf("error in getting user from email: %v", err)
 	}
 	return user, nil
 }
@@ -69,7 +70,7 @@ func (r *Repo) DeleteUser(ctx context.Context, id int64) error {
 }
 
 // update user info maybe.. not so sure for now..will test it
-func (r *Repo) UpdateUser(ctx context.Context, args db.UpdateUserParams) (db.User, error) {
+func (r *Repo) UpdateUser(ctx context.Context, args db.UpdateUserParams) (db.UpdateUserRow, error) {
 	user, err := r.dbq.UpdateUser(ctx, args)
 	if err != nil {
 		log.Printf("error in updating user %v", err)

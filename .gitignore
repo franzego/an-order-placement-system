@@ -4,3 +4,4 @@ services/user-service/authentication/.env
 services/store-service/config/.env
 services/user-service/cmd/.env
 services/user-service/config/.env
+services/notification-service/sendgrid.env

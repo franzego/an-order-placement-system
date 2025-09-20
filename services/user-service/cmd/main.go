@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/franzego/redisclient"
 	"github.com/franzego/user-service/config"
 	"github.com/franzego/user-service/internal"
 	"github.com/gorilla/mux"
@@ -23,12 +24,17 @@ func main() {
 	}
 	defer dbconn2.Close()
 
+	rdb := redisclient.NewRedisService()
+	if rdb == nil {
+		log.Fatal("Failed to create Redis client")
+	}
+
 	repo := internal.NewRepoService(dbconn2)
 	if repo == nil {
 		log.Fatal("Failed to create repository service")
 	}
 
-	svc := internal.NewService(repo)
+	svc := internal.NewService(repo, rdb)
 	if svc == nil {
 		log.Fatal("Failed to create service")
 	}
