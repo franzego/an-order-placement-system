@@ -48,8 +48,8 @@ func NewConsumerService(brokers []string, redisConfig RedisConfig) (*Consumer, e
 		Brokers:        brokers,
 		Topic:          "orders",
 		GroupID:        "notification-service",
-		MinBytes:       10e3,    // 10KB
-		MaxBytes:       10e6,    // 10MB
+		MinBytes:       10e3, // 10KB
+		MaxBytes:       10e6, // 10MB
 		CommitInterval: time.Second,
 		ReadBackoffMin: time.Second,
 		ReadBackoffMax: 5 * time.Second,
@@ -60,6 +60,7 @@ func NewConsumerService(brokers []string, redisConfig RedisConfig) (*Consumer, e
 		reader: reader,
 	}, nil
 }
+
 func (c *Consumer) ReadMessage(ctx context.Context) {
 	defer c.reader.Close()
 	for {

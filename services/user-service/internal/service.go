@@ -49,14 +49,14 @@ func (s *Service) SignUp(ctx context.Context, username string, email string,
 		return "", err
 	}
 	// Cache user data in Redis
-	userKey := fmt.Sprintf("user:%s", email)
+	userKey := fmt.Sprintf("user:%d", user.ID)
 	userData := map[string]interface{}{
-		"id":         user.ID,
-		"username":   user.Username,
-		"email":      user.Email,
-		"firstname":  user.FirstName.String,
-		"lastname":   user.LastName.String,
-		"is_active":  user.IsActive,
+		"id":        user.ID,
+		"username":  user.Username,
+		"email":     user.Email,
+		"firstname": user.FirstName.String,
+		"lastname":  user.LastName.String,
+		//"is_active":  user.IsActive,
 		"created_at": user.CreatedAt.Time.Format(time.RFC3339),
 	}
 

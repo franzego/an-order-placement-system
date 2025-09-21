@@ -44,8 +44,8 @@ func LoadConfig() *config {
 		log.Panicln("DATABASE_URL is required")
 	}
 	if cfg.PORT == "" {
-		cfg.PORT = "8080"
-		log.Println("No PORT specified, using default: 8080")
+		cfg.PORT = "8082"
+		log.Println("No PORT specified, using default: 8082")
 	}
 	return cfg
 

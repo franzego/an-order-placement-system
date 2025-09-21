@@ -36,7 +36,7 @@ func (h *handle) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Userid int                     `json:"userid" validate:"gt0"`
+		Userid int                     `json:"user_id" validate:"gt0"`
 		Args   []db.AddOrderItemParams `json:"args" validate:"required,min=1"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -44,7 +44,18 @@ func (h *handle) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Debug logging
+	log.Printf("DEBUG: Received order request - UserID: %d, Items count: %d", req.Userid, len(req.Args))
 	defer r.Body.Close()
+
+	// Validate userid
+	if req.Userid <= 0 {
+		log.Printf("ERROR: Invalid userid: %d", req.Userid)
+		http.Error(w, "Invalid userid: must be greater than 0", http.StatusBadRequest)
+		return
+	}
+
 	// for decoding purpose
 	if len(req.Args) == 0 {
 		log.Printf("ERROR: No items in request!")

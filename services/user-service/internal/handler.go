@@ -55,10 +55,10 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]string{tok: "token"}
+	resp := map[string]string{"token": tok}
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(&resp)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"msg":   "Login successful",
-		"email": "req.Email",
+		"email": req.Email,
+		"token": tok,
 	})
 
 	/*resp := map[string]string{tok: "token"}

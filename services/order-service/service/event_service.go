@@ -66,6 +66,9 @@ func (es *EventService) PublishOrderCreated(ctx context.Context, order db.Order,
 		eventItems,
 	)
 
+	fmt.Printf("DEBUG: Publishing order created event - OrderID: %d, UserID: %d, TotalAmount: %s\n",
+		order.OrderID, order.UserID, totalAmount)
+
 	return es.Producer.PublishEvents(ctx, OrdersTopic, *event)
 }
 

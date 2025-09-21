@@ -129,16 +129,18 @@ func (r *Repo) CreateOrderWithListedItems(ctx context.Context, userid int, args 
 
 		totalamount := FloattoNumeric(total)
 		//create the order
+		log.Printf("DEBUG: Creating order with UserID: %d, TotalAmount: %v", userid, totalamount)
 		ord, err := q.CreateOrder(ctx, db.CreateOrderParams{
 			UserID:      int32(userid),
 			TotalAmount: totalamount,
 			StatusStaus: "pending",
 		})
 		if err != nil {
-			log.Print("problem in creating order")
+			log.Printf("ERROR: Problem in creating order: %v", err)
 			return err
 		}
 
+		log.Printf("DEBUG: Order created successfully - OrderID: %d, UserID: %d", ord.OrderID, ord.UserID)
 		createdorder = ord
 		//we need to insert the order items into the order itself that i just created
 
@@ -158,10 +160,11 @@ func (r *Repo) CreateOrderWithListedItems(ctx context.Context, userid int, args 
 	}
 
 	//this is where i will inject it into the eventservice which is my service to handle the events
+	log.Printf("DEBUG: About to publish event - OrderID: %d, UserID: %d", createdorder.OrderID, createdorder.UserID)
 
 	err = r.eventservice.PublishOrderCreated(ctx, createdorder, ordereditems)
 	if err != nil {
-		log.Print("problem in publishing order created event")
+		log.Printf("ERROR: Problem in publishing order created event: %v", err)
 		return db.Order{}, nil, err
 	}
 

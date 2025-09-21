@@ -98,7 +98,7 @@ When an order is created, an event is published to the orders topic:
 	"version": "1.0",
 	"data": {
 		"orderid": 17,
-		"userid": 0,
+		"userid": 101,
 		"totalamount": "13.48",
 		"status": "pending",
 		"items": [
